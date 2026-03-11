@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design Exercises -- Yalla Delivery</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 60px 24px;
+  }
+  .container { max-width: 640px; width: 100%; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+  .subtitle { font-size: 15px; color: #64748b; margin-bottom: 8px; }
+  .series-link { font-size: 13px; color: #3b82f6; text-decoration: none; margin-bottom: 40px; display: inline-block; }
+  .series-link:hover { text-decoration: underline; }
+  .description { font-size: 14px; color: #475569; line-height: 1.7; margin-bottom: 40px; }
+
+  .exercise-list { display: flex; flex-direction: column; gap: 16px; }
+
+  .exercise-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s;
+    display: block;
+  }
+  .exercise-card:hover { border-color: #3b82f6; box-shadow: 0 2px 12px rgba(59,130,246,0.1); }
+  .exercise-card.disabled { opacity: 0.5; pointer-events: none; }
+
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .card-part { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; color: #8b5cf6; }
+  .card-status {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .status-live { background: #f0fdf4; color: #166534; }
+  .status-soon { background: #f1f5f9; color: #64748b; }
+
+  .card-title { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .card-desc { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+  .footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.6;
+  }
+  .footer a { color: #64748b; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>System Design Exercises</h1>
+  <div class="subtitle">Yalla Delivery -- Interactive Architecture Challenges</div>
+  <a class="series-link" href="LINK_TO_MEDIUM_SERIES">Read the full article series on Medium --></a>
+
+  <p class="description">
+    Hands-on exercises for the <strong>"Coding Is Solved. Architecture Isn't."</strong> series.
+    Drag-and-drop system design components, connect them, and screenshot your solution to share.
+    There are no single right answers -- only trade-offs.
+  </p>
+
+  <div class="exercise-list">
+    <a class="exercise-card" href="part-2/">
+      <div class="card-header">
+        <span class="card-part">Part 2</span>
+        <span class="card-status status-live">Live</span>
+      </div>
+      <div class="card-title">Design the Order Lifecycle</div>
+      <div class="card-desc">Sara places an order on Yalla Delivery. Design the architecture: which database stores the order? What gets cached? What happens when the restaurant is offline?</div>
+    </a>
+
+    <div class="exercise-card disabled">
+      <div class="card-header">
+        <span class="card-part">Part 3</span>
+        <span class="card-status status-soon">Coming soon</span>
+      </div>
+      <div class="card-title">Async Processing & Message Queues</div>
+      <div class="card-desc">Design the communication between services when an order is placed. Which steps are synchronous? Which can happen in the background?</div>
+    </div>
+
+    <div class="exercise-card disabled">
+      <div class="card-header">
+        <span class="card-part">Part 4</span>
+        <span class="card-status status-soon">Coming soon</span>
+      </div>
+      <div class="card-title">Designing for Failure</div>
+      <div class="card-desc">The payment provider goes down. The database master crashes. Design redundancy and failover strategies for Yalla Delivery.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Part of the <a href="LINK_TO_MEDIUM_SERIES">"Coding Is Solved. Architecture Isn't."</a> series.<br>
+    Built by <a href="LINK_TO_YOUR_PROFILE">YOUR_NAME</a>.
+  </div>
+</div>
+</body>
+</html>
