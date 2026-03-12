@@ -70,13 +70,74 @@
   .btn-connect.active { background: var(--purple); color: white; border-color: var(--purple); }
   .btn-danger { color: var(--red); border-color: #fecaca; }
   .btn-danger:hover { background: #fef2f2; }
-  .btn-label {
+  /* Edit popover */
+  .edit-popover {
+    position: absolute;
+    z-index: 50;
     background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
-  .btn-label.active {
-    background: var(--cyan);
+  .edit-popover label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .edit-popover input,
+  .edit-popover textarea {
+    font-size: 13px;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    outline: none;
+    background: var(--bg);
+    color: var(--text);
+    width: 100%;
+    resize: none;
+  }
+  .edit-popover input:focus,
+  .edit-popover textarea:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  }
+  .edit-popover textarea {
+    height: 52px;
+  }
+  .edit-popover .popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .edit-popover .popover-actions button {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .edit-popover .popover-actions .save-btn {
+    background: var(--blue);
     color: white;
-    border-color: var(--cyan);
+    border-color: var(--blue);
+  }
+  .component-description {
+    font-size: 9px;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 130px;
+    line-height: 1.3;
+    pointer-events: none;
   }
 
   /* Main layout */
@@ -268,7 +329,7 @@
     color: var(--text);
     text-align: center;
     white-space: nowrap;
-    max-width: 120px;
+    max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
     pointer-events: none;
@@ -434,19 +495,6 @@
     white-space: nowrap;
   }
 
-  /* Editable label input */
-  .label-edit-input {
-    font-size: 11px;
-    font-weight: 500;
-    text-align: center;
-    border: 1px solid var(--blue);
-    border-radius: 4px;
-    padding: 2px 6px;
-    outline: none;
-    background: var(--surface);
-    max-width: 120px;
-    z-index: 20;
-  }
 
   /* Toast notification */
   .toast {
@@ -519,10 +567,6 @@
     </div>
   </div>
   <div class="header-actions">
-    <button class="btn btn-label" id="labelModeBtn" onclick="toggleLabelMode()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      Label
-    </button>
     <button class="btn btn-connect" id="connectBtn" onclick="toggleConnectMode()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       Connect
@@ -594,7 +638,7 @@
       </div>
     </div>
     <div class="hints">
-      <div><kbd>Double-click</kbd> component to rename</div>
+      <div><kbd>Double-click</kbd> to edit name &amp; details</div>
       <div><kbd>Delete</kbd> / <kbd>Backspace</kbd> to remove selected</div>
       <div>Click a connection line to remove it</div>
     </div>
@@ -664,7 +708,6 @@
 let components = [];
 let connections = [];
 let connectMode = false;
-let labelMode = false;
 let connectSource = null;
 let selectedComponent = null;
 let draggedType = null;
@@ -713,7 +756,7 @@ workspace.addEventListener('drop', e => {
 function createComponent(type, x, y) {
   const id = nextId++;
   const label = defaultLabels[type] || type;
-  const comp = { id, type, x, y, label };
+  const comp = { id, type, x, y, label, description: '' };
   components.push(comp);
   renderComponent(comp);
 }
@@ -743,12 +786,17 @@ function renderComponent(comp) {
   labelEl.className = 'component-label';
   labelEl.textContent = comp.label;
 
+  const descEl = document.createElement('div');
+  descEl.className = 'component-description';
+  descEl.textContent = comp.description || '';
+
   el.appendChild(body);
   el.appendChild(labelEl);
+  el.appendChild(descEl);
 
   // Mouse events for dragging
   el.addEventListener('mousedown', e => {
-    if (e.target.classList.contains('label-edit-input')) return;
+    if (e.target.closest('.edit-popover')) return;
 
     if (connectMode) {
       handleConnectClick(comp.id);
@@ -756,24 +804,18 @@ function renderComponent(comp) {
       return;
     }
 
-    if (labelMode) {
-      startEditLabel(comp, el);
-      e.stopPropagation();
-      return;
-    }
-
     selectComponent(comp.id);
     draggedComponent = comp;
     const rect = el.getBoundingClientRect();
-    const wsRect = workspace.getBoundingClientRect();
     dragOffset.x = e.clientX - rect.left;
     dragOffset.y = e.clientY - rect.top;
     e.stopPropagation();
   });
 
-  // Double click to edit label
+  // Double click to edit label + description
   el.addEventListener('dblclick', e => {
-    startEditLabel(comp, el);
+    if (e.target.closest('.edit-popover')) return;
+    openEditPopover(comp, el);
     e.stopPropagation();
   });
 
@@ -827,6 +869,7 @@ function selectComponent(id) {
 
 workspace.addEventListener('mousedown', e => {
   if (e.target === workspace || e.target === connectionsLayer) {
+    closeEditPopover();
     deselectAll();
   }
 });
@@ -848,9 +891,9 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
   }
   if (e.key === 'Escape') {
+    closeEditPopover();
     deselectAll();
     if (connectMode) toggleConnectMode();
-    if (labelMode) toggleLabelMode();
   }
 });
 
@@ -866,10 +909,7 @@ function removeComponent(id) {
 // Connect mode
 function toggleConnectMode() {
   connectMode = !connectMode;
-  if (connectMode && labelMode) {
-    labelMode = false;
-    document.getElementById('labelModeBtn').classList.remove('active');
-  }
+  closeEditPopover();
   connectSource = null;
   document.getElementById('connectBtn').classList.toggle('active', connectMode);
   document.querySelectorAll('.connect-source').forEach(el => el.classList.remove('connect-source'));
@@ -898,44 +938,62 @@ function handleConnectClick(id) {
   }
 }
 
-// Label mode
-function toggleLabelMode() {
-  labelMode = !labelMode;
-  if (labelMode && connectMode) {
-    connectMode = false;
-    document.getElementById('connectBtn').classList.remove('active');
-    workspace.style.cursor = 'default';
+// Edit popover
+let activePopover = null;
+
+function closeEditPopover() {
+  if (activePopover) {
+    activePopover.remove();
+    activePopover = null;
   }
-  document.getElementById('labelModeBtn').classList.toggle('active', labelMode);
 }
 
-function startEditLabel(comp, el) {
-  const labelEl = el.querySelector('.component-label');
-  if (!labelEl || el.querySelector('.label-edit-input')) return;
+function openEditPopover(comp, el) {
+  closeEditPopover();
 
-  const input = document.createElement('input');
-  input.className = 'label-edit-input';
-  input.value = comp.label;
-  input.style.width = Math.max(80, comp.label.length * 8) + 'px';
+  const popover = document.createElement('div');
+  popover.className = 'edit-popover';
 
-  labelEl.style.display = 'none';
-  el.appendChild(input);
-  input.focus();
-  input.select();
+  popover.innerHTML = `
+    <label>Name</label>
+    <input type="text" class="edit-name" value="${comp.label.replace(/"/g, '&quot;')}">
+    <label>Details <span style="font-weight:400;text-transform:none">(e.g. what data it stores)</span></label>
+    <textarea class="edit-desc" placeholder="e.g. PostgreSQL -- orders, payments">${comp.description || ''}</textarea>
+    <div class="popover-actions">
+      <button class="cancel-btn" type="button">Cancel</button>
+      <button class="save-btn" type="button">Save</button>
+    </div>
+  `;
 
-  const finish = () => {
-    comp.label = input.value.trim() || comp.label;
-    labelEl.textContent = comp.label;
-    labelEl.style.display = '';
-    input.remove();
+  el.appendChild(popover);
+  activePopover = popover;
+
+  const nameInput = popover.querySelector('.edit-name');
+  const descInput = popover.querySelector('.edit-desc');
+  nameInput.focus();
+  nameInput.select();
+
+  const save = () => {
+    const newLabel = nameInput.value.trim() || comp.label;
+    const newDesc = descInput.value.trim();
+    comp.label = newLabel;
+    comp.description = newDesc;
+    el.querySelector('.component-label').textContent = newLabel;
+    el.querySelector('.component-description').textContent = newDesc;
+    closeEditPopover();
   };
 
-  input.addEventListener('blur', finish);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { finish(); }
-    if (e.key === 'Escape') { input.value = comp.label; finish(); }
+  popover.querySelector('.save-btn').addEventListener('click', save);
+  popover.querySelector('.cancel-btn').addEventListener('click', closeEditPopover);
+
+  popover.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { save(); e.preventDefault(); }
+    if (e.key === 'Escape') { closeEditPopover(); }
     e.stopPropagation();
   });
+
+  // Prevent drag when interacting with popover
+  popover.addEventListener('mousedown', e => e.stopPropagation());
 }
 
 // Render connections
