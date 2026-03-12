@@ -620,15 +620,15 @@
     <div class="exercise-subtitle">Design the Order Lifecycle</div>
 
     <div class="scenario">
-      <p><strong>Sara</strong> opens <em>Yalla Delivery</em>, adds shawarma and hummus to her cart, and taps <strong>"Place Order."</strong></p>
+      <p><strong>Omar</strong> opens <em>Yalla Delivery</em> on a Friday evening, adds a family meal (grilled chicken platter, garlic dip, and fresh juice) from <strong>Pizza Roma</strong>, and taps <strong>"Place Order."</strong></p>
       <p>From that moment, here is everything that needs to happen:</p>
       <ol class="steps">
-        <li>Validate Sara's payment method</li>
+        <li>Validate Omar's payment method</li>
         <li>Charge her card</li>
         <li>Create the order record</li>
         <li>Notify the restaurant</li>
         <li>Find and assign a nearby driver</li>
-        <li>Send Sara a confirmation with estimated delivery time</li>
+        <li>Send Omar a confirmation with estimated delivery time</li>
         <li>Send the driver pickup details</li>
       </ol>
     </div>
@@ -641,10 +641,10 @@
         <p><strong>Q2:</strong> What gets cached and what doesn't in this flow?</p>
       </div>
       <div class="question">
-        <p><strong>Q3:</strong> What happens if step 2 succeeds but step 4 fails? Should Sara be charged?</p>
+        <p><strong>Q3:</strong> What happens if step 2 succeeds but step 4 fails? (Pizza Roma is offline.) Should Omar be charged?</p>
       </div>
       <div class="question">
-        <p><strong>Q4:</strong> Does Sara wait for all 7 steps before seeing "Order confirmed"? Which steps can happen after?</p>
+        <p><strong>Q4:</strong> Does Omar wait for all 7 steps before seeing "Order confirmed"? Which steps can happen after?</p>
       </div>
     </div>
 
