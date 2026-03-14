@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design Exercise - Yalla Delivery | Part 3</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --amber: #f59e0b;
+    --green: #22c55e;
+    --red: #ef4444;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --indigo: #6366f1;
+  }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header h1 { font-size: 16px; font-weight: 600; }
+  .header .subtitle { font-size: 12px; color: var(--text-secondary); }
+  .header-actions { display: flex; gap: 8px; }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--bg); }
+  .btn-primary { background: var(--blue); color: white; border-color: var(--blue); }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-connect { background: var(--surface); }
+  .btn-connect.active { background: var(--purple); color: white; border-color: var(--purple); }
+  .btn-danger { color: var(--red); border-color: #fecaca; }
+  .btn-danger:hover { background: #fef2f2; }
+
+  /* Edit popover */
+  .edit-popover {
+    position: absolute;
+    z-index: 50;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .edit-popover label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .edit-popover input,
+  .edit-popover textarea {
+    font-size: 13px;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    outline: none;
+    background: var(--bg);
+    color: var(--text);
+    width: 100%;
+    resize: none;
+  }
+  .edit-popover input:focus,
+  .edit-popover textarea:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  }
+  .edit-popover textarea {
+    height: 52px;
+  }
+  .edit-popover .popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .edit-popover .popover-actions button {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .edit-popover .popover-actions .save-btn {
+    background: var(--blue);
+    color: white;
+    border-color: var(--blue);
+  }
+  .component-description {
+    font-size: 9px;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 130px;
+    line-height: 1.3;
+    pointer-events: none;
+  }
+
+  /* Main layout */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Left sidebar - components */
+  .sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-section h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .component-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .palette-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: grab;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .palette-item:hover { background: var(--bg); border-color: var(--border); }
+  .palette-item:active { cursor: grabbing; }
+  .palette-item .shape { flex-shrink: 0; }
+  .palette-item .label { font-size: 13px; font-weight: 500; }
+
+  /* Shape previews in palette */
+  .shape-server {
+    width: 28px; height: 20px;
+    background: var(--bg);
+    border: 2px solid var(--blue);
+    border-radius: 3px;
+    position: relative;
+  }
+  .shape-server::after {
+    content: '';
+    position: absolute;
+    top: 6px; left: 3px; right: 3px;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .shape-database {
+    width: 26px; height: 22px;
+    border: 2px solid var(--amber);
+    border-radius: 50% / 30%;
+    background: var(--bg);
+  }
+
+  .shape-cache {
+    width: 20px; height: 20px;
+    background: var(--bg);
+    border: 2px solid var(--amber);
+    transform: rotate(45deg);
+    border-radius: 3px;
+  }
+
+  .shape-lb {
+    width: 24px; height: 22px;
+    background: var(--bg);
+    border: 2px solid var(--purple);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+
+  .shape-user {
+    width: 20px; height: 20px;
+    border: 2px solid var(--blue);
+    border-radius: 50%;
+    background: var(--bg);
+  }
+
+  .shape-queue {
+    width: 28px; height: 16px;
+    background: var(--bg);
+    border: 2px solid var(--cyan);
+    border-radius: 8px;
+    position: relative;
+  }
+  .shape-queue::after {
+    content: '...';
+    position: absolute;
+    top: -4px; left: 4px;
+    font-size: 10px;
+    color: var(--cyan);
+    letter-spacing: 2px;
+  }
+
+  .shape-service {
+    width: 24px; height: 20px;
+    background: var(--bg);
+    border: 2px solid var(--green);
+    border-radius: 5px;
+  }
+
+  .shape-cloud {
+    width: 28px; height: 18px;
+    background: var(--bg);
+    border: 2px solid var(--pink);
+    border-radius: 10px;
+  }
+
+  .shape-topic {
+    width: 24px; height: 22px;
+    background: var(--bg);
+    border: 2px solid var(--indigo);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+
+  .shape-worker {
+    width: 24px; height: 20px;
+    background: var(--bg);
+    border: 2px solid var(--green);
+    border-radius: 5px;
+    position: relative;
+  }
+  .shape-worker::after {
+    content: '';
+    position: absolute;
+    top: 4px; left: 4px;
+    width: 8px; height: 8px;
+    border: 2px solid var(--green);
+    border-top: none;
+    border-right: none;
+    transform: rotate(-45deg);
+  }
+
+  .shape-dlq {
+    width: 28px; height: 16px;
+    background: var(--bg);
+    border: 2px solid var(--red);
+    border-radius: 8px;
+    position: relative;
+  }
+  .shape-dlq::after {
+    content: 'x';
+    position: absolute;
+    top: -2px; left: 9px;
+    font-size: 10px;
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  /* Canvas workspace */
+  .workspace-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  .workspace {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background:
+      radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+    background-size: 24px 24px;
+    overflow: hidden;
+  }
+
+  /* SVG layer for connections */
+  .connections-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .connections-layer line {
+    stroke: #475569;
+    stroke-width: 2;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .connections-layer line:hover {
+    stroke: var(--red);
+    stroke-width: 3;
+  }
+  .connections-layer .arrow-head {
+    fill: #475569;
+  }
+
+  /* Placed components on canvas */
+  .placed-component {
+    position: absolute;
+    z-index: 10;
+    cursor: move;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: filter 0.15s;
+  }
+  .placed-component:hover { filter: drop-shadow(0 2px 8px rgba(0,0,0,0.12)); }
+  .placed-component.connect-source .component-body { box-shadow: 0 0 0 3px var(--purple); }
+  .placed-component.selected .component-body { box-shadow: 0 0 0 3px var(--blue); }
+
+  .component-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    transition: box-shadow 0.15s;
+    position: relative;
+  }
+
+  .component-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: center;
+    white-space: nowrap;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+  }
+
+  /* Component body shapes */
+  .body-server {
+    width: 120px; height: 60px;
+    border: 2px solid var(--blue);
+    border-radius: 6px;
+  }
+  .body-server::before, .body-server::after {
+    content: '';
+    position: absolute;
+    left: 10px; right: 10px;
+    height: 1px;
+    background: var(--border);
+  }
+  .body-server::before { top: 20px; }
+  .body-server::after { top: 38px; }
+  .server-led {
+    position: absolute;
+    right: 10px; top: 10px;
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+  }
+
+  .body-database {
+    width: 100px; height: 70px;
+    border: 2px solid var(--amber);
+    border-radius: 50% / 20%;
+  }
+
+  .body-cache {
+    width: 80px; height: 80px;
+    border: 2px solid var(--amber);
+    transform: rotate(45deg);
+    border-radius: 6px;
+  }
+  .body-cache .component-inner-label {
+    transform: rotate(-45deg);
+  }
+
+  .body-lb {
+    width: 90px; height: 80px;
+    border: 2px solid var(--purple);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+
+  .body-user {
+    width: 50px; height: 50px;
+    border: 2px solid var(--blue);
+    border-radius: 50%;
+  }
+
+  .body-queue {
+    width: 120px; height: 50px;
+    border: 2px solid var(--cyan);
+    border-radius: 25px;
+  }
+
+  .body-service {
+    width: 110px; height: 55px;
+    border: 2px solid var(--green);
+    border-radius: 8px;
+  }
+
+  .body-cloud {
+    width: 110px; height: 55px;
+    border: 2px solid var(--pink);
+    border-radius: 28px;
+  }
+
+  .body-topic {
+    width: 100px; height: 90px;
+    border: 2px solid var(--indigo);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+
+  .body-worker {
+    width: 110px; height: 55px;
+    border: 2px solid var(--green);
+    border-radius: 8px;
+    border-style: dashed;
+  }
+
+  .body-dlq {
+    width: 120px; height: 50px;
+    border: 2px solid var(--red);
+    border-radius: 25px;
+    border-style: dashed;
+  }
+
+  .component-inner-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+    pointer-events: none;
+  }
+
+  /* Right sidebar - exercise */
+  .exercise-panel {
+    width: 300px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .exercise-panel h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .exercise-panel .exercise-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+  .exercise-panel .scenario {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    border: 1px solid var(--border);
+  }
+  .exercise-panel .scenario p { margin-bottom: 8px; }
+  .exercise-panel .scenario p:last-child { margin-bottom: 0; }
+  .exercise-panel .steps {
+    margin: 10px 0;
+    padding-left: 20px;
+  }
+  .exercise-panel .steps li {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .questions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .question {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 12px;
+    border-left: 3px solid var(--purple);
+  }
+  .question p {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .question strong {
+    color: var(--purple);
+  }
+
+  .exercise-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Connection label */
+  .connection-label {
+    position: absolute;
+    z-index: 5;
+    font-size: 10px;
+    color: var(--text-secondary);
+    background: var(--surface);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--text);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Keyboard hints */
+  .hints {
+    padding: 12px 16px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+  .hints kbd {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-family: inherit;
+  }
+
+  /* Screenshot watermark */
+  .watermark {
+    display: none;
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    z-index: 50;
+    background: rgba(255,255,255,0.85);
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  /* Mobile warning */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .exercise-panel { display: none; }
+    .header .subtitle { display: none; }
+  }
+  @media (max-width: 600px) {
+    .header h1 { font-size: 13px; }
+    .btn { padding: 6px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div>
+      <h1>System Design Exercise</h1>
+      <div class="subtitle">Yalla Delivery -- Design the Notification System</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-connect" id="connectBtn" onclick="toggleConnectMode()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Connect
+    </button>
+    <button class="btn btn-danger" onclick="clearCanvas()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      Clear
+    </button>
+    <button class="btn btn-primary" onclick="takeScreenshot()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Screenshot
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Left sidebar: component palette -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>Infrastructure</h3>
+      <div class="component-list">
+        <div class="palette-item" draggable="true" data-type="server">
+          <div class="shape shape-server"></div>
+          <span class="label">Server</span>
+        </div>
+        <div class="palette-item" draggable="true" data-type="lb">
+          <div class="shape shape-lb"></div>
+          <span class="label">Load Balancer</span>
+        </div>
+        <div class="palette-item" draggable="true" data-type="cloud">
+          <div class="shape shape-cloud"></div>
+          <span class="label">CDN / Cloud</span>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Data</h3>
+      <div class="component-list">
+        <div class="palette-item" draggable="true" data-type="database">
+          <div class="shape shape-database"></div>
+          <span class="label">Database</span>
+        </div>
+        <div class="palette-item" draggable="true" data-type="cache">
+          <div class="shape shape-cache"></div>
+          <span class="label">Cache</span>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Messaging</h3>
+      <div class="component-list">
+        <div class="palette-item" draggable="true" data-type="queue">
+          <div class="shape shape-queue"></div>
+          <span class="label">Message Queue</span>
+        </div>
+        <div class="palette-item" draggable="true" data-type="topic">
+          <div class="shape shape-topic"></div>
+          <span class="label">Topic (Pub/Sub)</span>
+        </div>
+        <div class="palette-item" draggable="true" data-type="dlq">
+          <div class="shape shape-dlq"></div>
+          <span class="label">Dead Letter Queue</span>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Services</h3>
+      <div class="component-list">
+        <div class="palette-item" draggable="true" data-type="service">
+          <div class="shape shape-service"></div>
+          <span class="label">Service</span>
+        </div>
+        <div class="palette-item" draggable="true" data-type="worker">
+          <div class="shape shape-worker"></div>
+          <span class="label">Worker</span>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Clients</h3>
+      <div class="component-list">
+        <div class="palette-item" draggable="true" data-type="user">
+          <div class="shape shape-user"></div>
+          <span class="label">User / Client</span>
+        </div>
+      </div>
+    </div>
+    <div class="hints">
+      <div><kbd>Double-click</kbd> to edit name &amp; details</div>
+      <div><kbd>Delete</kbd> / <kbd>Backspace</kbd> to remove selected</div>
+      <div>Click a connection line to remove it</div>
+    </div>
+  </div>
+
+  <!-- Canvas workspace -->
+  <div class="workspace-container">
+    <div class="workspace" id="workspace">
+      <svg class="connections-layer" id="connectionsLayer">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="arrow-head"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="watermark" id="watermark">System Design Exercise -- Yalla Delivery | Part 3</div>
+    </div>
+  </div>
+
+  <!-- Right sidebar: exercise -->
+  <div class="exercise-panel">
+    <h2>The Challenge</h2>
+    <div class="exercise-subtitle">Design the Notification System</div>
+
+    <div class="scenario">
+      <p><strong>Omar</strong> placed his order from <strong>Pizza Roma</strong>. Now he's watching the app, waiting for updates. Here's what needs to happen:</p>
+      <ol class="steps">
+        <li>"Your order has been received by Pizza Roma"</li>
+        <li>"Khalid is on the way to pick up your order"</li>
+        <li>"Khalid has picked up your order"</li>
+        <li>"Khalid is 5 minutes away" (real-time tracking)</li>
+        <li>"Your order has been delivered! Rate your experience"</li>
+      </ol>
+    </div>
+
+    <div class="questions">
+      <div class="question">
+        <p><strong>Q1:</strong> Which of these notifications should be pushed to Omar in real-time vs. available when he refreshes? What protocol would you use for real-time updates?</p>
+      </div>
+      <div class="question">
+        <p><strong>Q2:</strong> The driver's location updates every 3 seconds. Should every update be stored in PostgreSQL? Where would you store it instead, and why?</p>
+      </div>
+      <div class="question">
+        <p><strong>Q3:</strong> If the notification service is down for 2 minutes during a traffic spike, should Omar miss those updates entirely? How would you ensure he eventually sees them?</p>
+      </div>
+      <div class="question">
+        <p><strong>Q4:</strong> Pizza Roma receives orders from 50 different customers during dinner rush. Should each notification be a direct API call from Yalla Delivery's server, or is there a better pattern?</p>
+      </div>
+    </div>
+
+    <div class="exercise-footer">
+      <strong>There is no single right answer.</strong> Think in trade-offs. Design your architecture, take a screenshot, and share your solution with <strong>#YallaSDChallenge</strong>.
+      <br><br>
+      We'll explore this scenario in <strong>Part 4</strong> when we cover communication protocols and real-time systems.
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+// State
+let components = [];
+let connections = [];
+let connectMode = false;
+let connectSource = null;
+let selectedComponent = null;
+let draggedType = null;
+let draggedComponent = null;
+let dragOffset = { x: 0, y: 0 };
+let nextId = 1;
+
+const workspace = document.getElementById('workspace');
+const connectionsLayer = document.getElementById('connectionsLayer');
+
+const defaultLabels = {
+  server: 'Server',
+  database: 'Database',
+  cache: 'Redis Cache',
+  lb: 'Load Balancer',
+  user: 'User',
+  queue: 'Message Queue',
+  service: 'Service',
+  cloud: 'CDN / Cloud',
+  topic: 'Topic',
+  worker: 'Worker',
+  dlq: 'Dead Letter Queue'
+};
+
+// Palette drag
+document.querySelectorAll('.palette-item').forEach(item => {
+  item.addEventListener('dragstart', e => {
+    draggedType = item.dataset.type;
+    e.dataTransfer.effectAllowed = 'copy';
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(img, 0, 0);
+  });
+  item.addEventListener('dragend', () => { draggedType = null; });
+});
+
+workspace.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+workspace.addEventListener('drop', e => {
+  e.preventDefault();
+  if (!draggedType) return;
+  const rect = workspace.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  createComponent(draggedType, x, y);
+  draggedType = null;
+});
+
+function createComponent(type, x, y) {
+  const id = nextId++;
+  const label = defaultLabels[type] || type;
+  const comp = { id, type, x, y, label, description: '' };
+  components.push(comp);
+  renderComponent(comp);
+}
+
+function renderComponent(comp) {
+  const el = document.createElement('div');
+  el.className = 'placed-component';
+  el.dataset.id = comp.id;
+  el.style.left = (comp.x - getBodyWidth(comp.type) / 2) + 'px';
+  el.style.top = (comp.y - getBodyHeight(comp.type) / 2) + 'px';
+
+  const body = document.createElement('div');
+  body.className = `component-body body-${comp.type}`;
+
+  const innerLabel = document.createElement('div');
+  innerLabel.className = 'component-inner-label';
+  innerLabel.textContent = getInnerLabel(comp.type);
+  body.appendChild(innerLabel);
+
+  if (comp.type === 'server') {
+    const led = document.createElement('div');
+    led.className = 'server-led';
+    body.appendChild(led);
+  }
+
+  const labelEl = document.createElement('div');
+  labelEl.className = 'component-label';
+  labelEl.textContent = comp.label;
+
+  const descEl = document.createElement('div');
+  descEl.className = 'component-description';
+  descEl.textContent = comp.description || '';
+
+  el.appendChild(body);
+  el.appendChild(labelEl);
+  el.appendChild(descEl);
+
+  el.addEventListener('mousedown', e => {
+    if (e.target.closest('.edit-popover')) return;
+
+    if (connectMode) {
+      handleConnectClick(comp.id);
+      e.stopPropagation();
+      return;
+    }
+
+    selectComponent(comp.id);
+    draggedComponent = comp;
+    const rect = el.getBoundingClientRect();
+    dragOffset.x = e.clientX - rect.left;
+    dragOffset.y = e.clientY - rect.top;
+    e.stopPropagation();
+  });
+
+  el.addEventListener('dblclick', e => {
+    if (e.target.closest('.edit-popover')) return;
+    openEditPopover(comp, el);
+    e.stopPropagation();
+  });
+
+  workspace.appendChild(el);
+}
+
+function getInnerLabel(type) {
+  const labels = {
+    server: 'SRV', database: 'DB', cache: '', lb: 'LB',
+    user: '', queue: '[ ... ]', service: 'SVC', cloud: '',
+    topic: 'PUB/SUB', worker: 'WRK', dlq: 'DLQ'
+  };
+  return labels[type] || '';
+}
+
+function getBodyWidth(type) {
+  const widths = {
+    server: 120, database: 100, cache: 80, lb: 90, user: 50,
+    queue: 120, service: 110, cloud: 110, topic: 100, worker: 110, dlq: 120
+  };
+  return widths[type] || 100;
+}
+
+function getBodyHeight(type) {
+  const heights = {
+    server: 60, database: 70, cache: 80, lb: 80, user: 50,
+    queue: 50, service: 55, cloud: 55, topic: 90, worker: 55, dlq: 50
+  };
+  return heights[type] || 60;
+}
+
+// Dragging on workspace
+document.addEventListener('mousemove', e => {
+  if (!draggedComponent) return;
+  const wsRect = workspace.getBoundingClientRect();
+  const x = e.clientX - wsRect.left - dragOffset.x;
+  const y = e.clientY - wsRect.top - dragOffset.y;
+
+  const el = workspace.querySelector(`[data-id="${draggedComponent.id}"]`);
+  if (el) {
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    draggedComponent.x = x + getBodyWidth(draggedComponent.type) / 2;
+    draggedComponent.y = y + getBodyHeight(draggedComponent.type) / 2;
+    updateConnections();
+  }
+});
+
+document.addEventListener('mouseup', () => { draggedComponent = null; });
+
+// Selection
+function selectComponent(id) {
+  document.querySelectorAll('.placed-component').forEach(el => el.classList.remove('selected'));
+  const el = workspace.querySelector(`[data-id="${id}"]`);
+  if (el) el.classList.add('selected');
+  selectedComponent = id;
+}
+
+workspace.addEventListener('mousedown', e => {
+  if (e.target === workspace || e.target === connectionsLayer) {
+    closeEditPopover();
+    deselectAll();
+  }
+});
+
+function deselectAll() {
+  document.querySelectorAll('.placed-component').forEach(el => el.classList.remove('selected'));
+  selectedComponent = null;
+  if (connectMode && connectSource) {
+    document.querySelectorAll('.connect-source').forEach(el => el.classList.remove('connect-source'));
+    connectSource = null;
+  }
+}
+
+// Delete selected
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedComponent !== null) {
+    removeComponent(selectedComponent);
+    e.preventDefault();
+  }
+  if (e.key === 'Escape') {
+    closeEditPopover();
+    deselectAll();
+    if (connectMode) toggleConnectMode();
+  }
+});
+
+function removeComponent(id) {
+  const el = workspace.querySelector(`[data-id="${id}"]`);
+  if (el) el.remove();
+  components = components.filter(c => c.id !== id);
+  connections = connections.filter(c => c.from !== id && c.to !== id);
+  updateConnections();
+  selectedComponent = null;
+}
+
+// Connect mode
+function toggleConnectMode() {
+  connectMode = !connectMode;
+  closeEditPopover();
+  connectSource = null;
+  document.getElementById('connectBtn').classList.toggle('active', connectMode);
+  document.querySelectorAll('.connect-source').forEach(el => el.classList.remove('connect-source'));
+  workspace.style.cursor = connectMode ? 'crosshair' : 'default';
+}
+
+function handleConnectClick(id) {
+  if (!connectSource) {
+    connectSource = id;
+    const el = workspace.querySelector(`[data-id="${id}"]`);
+    if (el) el.classList.add('connect-source');
+  } else if (connectSource !== id) {
+    const exists = connections.some(c =>
+      (c.from === connectSource && c.to === id) || (c.from === id && c.to === connectSource)
+    );
+    if (!exists) {
+      connections.push({ from: connectSource, to: id });
+      updateConnections();
+    }
+    document.querySelectorAll('.connect-source').forEach(el => el.classList.remove('connect-source'));
+    connectSource = null;
+  } else {
+    document.querySelectorAll('.connect-source').forEach(el => el.classList.remove('connect-source'));
+    connectSource = null;
+  }
+}
+
+// Edit popover
+let activePopover = null;
+
+function closeEditPopover() {
+  if (activePopover) {
+    activePopover.remove();
+    activePopover = null;
+  }
+}
+
+function openEditPopover(comp, el) {
+  closeEditPopover();
+
+  const popover = document.createElement('div');
+  popover.className = 'edit-popover';
+
+  popover.innerHTML = `
+    <label>Name</label>
+    <input type="text" class="edit-name" value="${comp.label.replace(/"/g, '&quot;')}">
+    <label>Details <span style="font-weight:400;text-transform:none">(e.g. what data it stores)</span></label>
+    <textarea class="edit-desc" placeholder="e.g. PostgreSQL -- orders, payments">${comp.description || ''}</textarea>
+    <div class="popover-actions">
+      <button class="cancel-btn" type="button">Cancel</button>
+      <button class="save-btn" type="button">Save</button>
+    </div>
+  `;
+
+  el.appendChild(popover);
+  activePopover = popover;
+
+  const nameInput = popover.querySelector('.edit-name');
+  const descInput = popover.querySelector('.edit-desc');
+  nameInput.focus();
+  nameInput.select();
+
+  const save = () => {
+    const newLabel = nameInput.value.trim() || comp.label;
+    const newDesc = descInput.value.trim();
+    comp.label = newLabel;
+    comp.description = newDesc;
+    el.querySelector('.component-label').textContent = newLabel;
+    el.querySelector('.component-description').textContent = newDesc;
+    closeEditPopover();
+  };
+
+  popover.querySelector('.save-btn').addEventListener('click', save);
+  popover.querySelector('.cancel-btn').addEventListener('click', closeEditPopover);
+
+  popover.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { save(); e.preventDefault(); }
+    if (e.key === 'Escape') { closeEditPopover(); }
+    e.stopPropagation();
+  });
+
+  popover.addEventListener('mousedown', e => e.stopPropagation());
+}
+
+// Render connections
+function updateConnections() {
+  connectionsLayer.querySelectorAll('line').forEach(l => l.remove());
+
+  connections.forEach((conn, idx) => {
+    const fromComp = components.find(c => c.id === conn.from);
+    const toComp = components.find(c => c.id === conn.to);
+    if (!fromComp || !toComp) return;
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', fromComp.x);
+    line.setAttribute('y1', fromComp.y);
+    line.setAttribute('x2', toComp.x);
+    line.setAttribute('y2', toComp.y);
+    line.setAttribute('marker-end', 'url(#arrowhead)');
+    line.dataset.index = idx;
+
+    line.addEventListener('click', () => {
+      connections.splice(idx, 1);
+      updateConnections();
+    });
+
+    connectionsLayer.appendChild(line);
+  });
+}
+
+// Clear canvas
+function clearCanvas() {
+  if (components.length === 0) return;
+  components = [];
+  connections = [];
+  selectedComponent = null;
+  connectSource = null;
+  workspace.querySelectorAll('.placed-component').forEach(el => el.remove());
+  updateConnections();
+  showToast('Canvas cleared');
+}
+
+// Screenshot
+async function takeScreenshot() {
+  const watermark = document.getElementById('watermark');
+  watermark.style.display = 'block';
+
+  document.querySelectorAll('.placed-component').forEach(el => el.classList.remove('selected', 'connect-source'));
+
+  try {
+    const canvas = await html2canvas(workspace, {
+      backgroundColor: '#f8fafc',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'yalla-delivery-notification-system.png';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Screenshot saved!');
+    });
+  } catch (err) {
+    showToast('Screenshot failed -- try right-clicking to save instead');
+  }
+
+  watermark.style.display = 'none';
+}
+
+// Toast
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

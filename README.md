@@ -10,8 +10,8 @@ Each exercise lets you drag-and-drop system design components (servers, database
 |------|-------|---------|----------|
 | 1 | Scaling from One Server to Millions of Users | [Read on Medium](https://rasha-salim.medium.com/system-design-coding-is-solved-architecture-isnt-b8578fb71ca5) | -- |
 | 2 | Databases and Caching | [Read on Medium](LINK_TO_PART_2) | [Launch Exercise](part-2/) |
-| 3 | Async Processing & Communication | Coming soon | Coming soon |
-| 4 | Reliability & Failure Handling | Coming soon | Coming soon |
+| 3 | Asynchronous Processing | [Read on Medium](LINK_TO_PART_3) | [Launch Exercise](part-3/) |
+| 4 | Communication Protocols & API Design | Coming soon | Coming soon |
 
 ## How to Use
 
@@ -25,7 +25,7 @@ Each exercise lets you drag-and-drop system design components (servers, database
 
 ## Run Locally
 
-Just open `part-2/index.html` in your browser. No build step, no dependencies.
+Just open any exercise folder (e.g. `part-2/index.html` or `part-3/index.html`) in your browser. No build step, no dependencies.
 
 ## License
 
